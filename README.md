@@ -2,7 +2,7 @@
 
 Un tableau de bord interactif qui tourne entièrement dans le navigateur. On dépose un fichier CSV ou Excel, et les indicateurs, les graphiques et les filtres se construisent à partir de ses colonnes.
 
-<!-- Démo : ajouter ici le lien Vercel une fois le déploiement fait -->
+**Démo :** [insight-board-iitsh.vercel.app](https://insight-board-iitsh.vercel.app/)
 
 ![InsightBoard en mode clair](docs/01-dashboard-clair.png)
 
