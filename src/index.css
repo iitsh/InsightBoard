@@ -96,3 +96,6 @@ select option {
 .editing .react-draggable-dragging {
   background: var(--paper);
 }
+/* Les contrôles natifs (calendrier, listes) suivent le thème */
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }

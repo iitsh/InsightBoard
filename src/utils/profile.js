@@ -49,3 +49,6 @@ export function pickDefaults(profile) {
     date: dates[0]?.name ?? null,
   }
 }
+// Les taux, remises, notes... se moyennent ; les montants et quantités s'additionnent
+const RATE_LIKE = /(discount|remise|taux|rate|ratio|pct|percent|score|rating)/i
+export const defaultAgg = (measure) => (measure && RATE_LIKE.test(measure) ? 'avg' : 'sum')

@@ -13,11 +13,11 @@ const formatCell = (v) => {
   return String(v)
 }
 
-export default function DataTable({ profile }) {
-  const { data, columns } = useDataStore()
+export default function DataTable({ rows: allRows, total, profile }) {
+  const columns = useDataStore((s) => s.columns)
   const [visible, setVisible] = useState(10)
   const numeric = new Set(profile.filter((c) => c.type === 'number').map((c) => c.name))
-  const rows = data.slice(0, visible)
+  const rows = allRows.slice(0, visible)
 
   return (
     <div className="overflow-x-auto">
@@ -52,9 +52,10 @@ export default function DataTable({ profile }) {
 
       <div className="mt-4 flex items-center gap-6 font-mono text-[11px] text-muted">
         <span>
-          {fmtInt(rows.length)} lignes affichées sur {fmtInt(data.length)}
+          {fmtInt(rows.length)} lignes affichées sur {fmtInt(allRows.length)}
+          {allRows.length !== total && ` (filtrées, ${fmtInt(total)} au total)`}
         </span>
-        {visible < data.length && (
+        {visible < allRows.length && (
           <button
             onClick={() => setVisible((v) => v + 25)}
             className="underline underline-offset-4 transition-colors duration-150 hover:text-ink"
