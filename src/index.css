@@ -46,3 +46,24 @@ body {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* Rampe de gris pour les graphiques : 1 = le plus contrasté, 5 = le plus discret */
+:root {
+  --chart-1: #2B2B28;
+  --chart-2: #6B6A64;
+  --chart-3: #9C9B95;
+  --chart-4: #C4C3BD;
+  --chart-5: #DEDDD7;
+}
+.dark {
+  --chart-1: #D9D9D4;
+  --chart-2: #A3A29C;
+  --chart-3: #76756F;
+  --chart-4: #504F4B;
+  --chart-5: #34332F;
+}
+
+/* Les listes déroulantes natives suivent le thème */
+select option {
+  background: var(--paper);
+  color: var(--ink);
+}

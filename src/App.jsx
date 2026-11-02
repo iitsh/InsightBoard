@@ -4,13 +4,13 @@ import { useThemeStore } from './store/useThemeStore'
 import Header from './components/Header'
 import StatusBar from './components/StatusBar'
 import EmptyState from './components/EmptyState'
-import DataPreview from './components/DataPreview'
+import Dashboard from './components/Dashboard'
 
 export default function App() {
   const theme = useThemeStore((s) => s.theme)
   const hasData = useDataStore((s) => s.data.length > 0)
+  const loadedAt = useDataStore((s) => s.loadedAt)
 
-  // Applique la classe .dark sur <html> quand le thème change
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
@@ -18,7 +18,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-paper font-sans text-ink antialiased">
       <Header />
-      <main className="pb-20">{hasData ? <DataPreview /> : <EmptyState />}</main>
+      <main className="pb-20">
+        {/* La key remet à zéro les sélecteurs quand on charge un nouveau fichier */}
+        {hasData ? <Dashboard key={loadedAt?.getTime()} /> : <EmptyState />}
+      </main>
       <StatusBar />
     </div>
   )
