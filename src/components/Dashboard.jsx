@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { Responsive, WidthProvider } from 'react-grid-layout'
 import { useDataStore } from '../store/useDataStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { profileColumns, pickDefaults } from '../utils/profile'
 import { computeStats, groupByDimension, groupByTime, topWithOthers } from '../utils/aggregate'
 import { fmtInt } from '../utils/format'
@@ -10,6 +12,17 @@ import TrendChart from './charts/TrendChart'
 import CumulativeChart from './charts/CumulativeChart'
 import RankingChart from './charts/RankingChart'
 import DonutChart from './charts/DonutChart'
+
+const Grid = WidthProvider(Responsive)
+
+// Tailles minimales : empêche de réduire un widget jusqu'à le rendre illisible
+const MIN_SIZE = {
+  kpi: { minW: 6, minH: 6 },
+  trend: { minW: 4, minH: 8 },
+  cumul: { minW: 3, minH: 8 },
+  ranking: { minW: 4, minH: 8 },
+  donut: { minW: 4, minH: 8 },
+}
 
 function Section({ index, title, children }) {
   return (
@@ -45,6 +58,8 @@ function Select({ label, value, options, onChange }) {
 
 export default function Dashboard() {
   const { data, columns, fileName, reset } = useDataStore()
+  const { layout, update: updateLayout, resetLayout } = useLayoutStore()
+  const [editing, setEditing] = useState(false)
 
   const profile = useMemo(() => profileColumns(data, columns), [data, columns])
   const defaults = useMemo(() => pickDefaults(profile), [profile])
@@ -70,7 +85,7 @@ export default function Dashboard() {
   const slices = useMemo(() => topWithOthers(split, 5), [split])
 
   const namesOf = (type) => profile.filter((c) => c.type === type).map((c) => c.name)
-    // Classement : toute catégorie utile (au moins 2 valeurs)
+  // Classement : toute catégorie utile (au moins 2 valeurs)
   const rankingOptions = profile
     .filter((c) => c.type === 'category' && c.distinct >= 2)
     .map((c) => c.name)
@@ -78,8 +93,12 @@ export default function Dashboard() {
   const splitOptions = profile
     .filter((c) => c.type === 'category' && c.distinct >= 2 && c.distinct <= 8)
     .map((c) => c.name)
+
   const hasTime = time && time.points.length > 0
   const unit = time?.granularity === 'day' ? 'jour' : 'mois'
+
+  // Disposition mémorisée + tailles minimales
+  const gridLayout = useMemo(() => layout.map((l) => ({ ...l, ...MIN_SIZE[l.i] })), [layout])
 
   return (
     <>
@@ -104,7 +123,7 @@ export default function Dashboard() {
         <div className="col-span-12 grid grid-cols-2 gap-6 lg:col-span-8 lg:grid-cols-4">
           <Select label="Mesure" value={measure} options={namesOf('number')} onChange={setConfig('measure')} />
           <Select label="Classement par" value={dimension} options={rankingOptions} onChange={setConfig('dimension')} />
-<Select label="Répartition par" value={dimension2} options={splitOptions} onChange={setConfig('dimension2')} />
+          <Select label="Répartition par" value={dimension2} options={splitOptions} onChange={setConfig('dimension2')} />
           <Select label="Date" value={date} options={namesOf('date')} onChange={setConfig('date')} />
         </div>
       </section>
@@ -117,42 +136,86 @@ export default function Dashboard() {
       )}
 
       {measure && (
-        <>
-          <Section index="01" title="Indicateurs">
-            <KpiStrip
-              measure={measure}
-              stats={stats}
-              ranking={ranking}
-              dimension={dimension}
-              points={hasTime ? time.points : null}
-            />
-          </Section>
+        <section className="px-8 pt-16">
+          {/* Barre de titre de la section + commandes d'édition */}
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <p className="eyebrow">01 — Visualisations</p>
 
-          {hasTime && (
-            <Section index="02" title="Évolution">
-              <div className="grid grid-cols-12 gap-x-8 gap-y-12">
-                <div className="col-span-12 lg:col-span-8">
-                  <ChartFrame
-                    fig={1}
-                    title="Évolution"
-                    subtitle={`Somme de ${measure} par ${unit}`}
-                  >
+            <div className="flex items-center gap-6 text-[13px]">
+              {editing && (
+                <button
+                  onClick={resetLayout}
+                  className="text-muted underline underline-offset-4 transition-colors duration-150 hover:text-ink"
+                >
+                  Rétablir la disposition
+                </button>
+              )}
+              <button
+                onClick={() => setEditing((e) => !e)}
+                className={`border px-3.5 py-1.5 transition-colors duration-150 ${
+                  editing
+                    ? 'border-accent text-accent'
+                    : 'border-ink hover:border-accent hover:text-accent'
+                }`}
+              >
+                {editing ? 'Terminer' : 'Modifier la disposition'}
+              </button>
+            </div>
+          </div>
+
+          {editing && (
+            <p className="mt-3 font-mono text-[11px] text-muted">
+              Attrapez l'en-tête d'un bloc pour le déplacer, le coin bas-droit pour le redimensionner.
+            </p>
+          )}
+
+          <div className={`mt-6 ${editing ? 'editing' : ''}`}>
+            <Grid
+              layouts={{ lg: gridLayout }}
+              breakpoints={{ lg: 1024, sm: 0 }}
+              cols={{ lg: 12, sm: 1 }}
+              rowHeight={24}
+              margin={[32, 16]}
+              containerPadding={[0, 0]}
+              draggableHandle=".drag-handle"
+              isDraggable={editing}
+              isResizable={editing}
+              onLayoutChange={(_, all) => all.lg && updateLayout(all.lg)}
+            >
+              {/* Les clés (key) doivent correspondre aux "i" du store */}
+              <div key="kpi">
+                <div className="h-full overflow-hidden border-t border-ink pt-3">
+                  <p className="eyebrow drag-handle">Indicateurs</p>
+                  <div className="mt-6">
+                    <KpiStrip
+                      measure={measure}
+                      stats={stats}
+                      ranking={ranking}
+                      dimension={dimension}
+                      points={hasTime ? time.points : null}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {hasTime && (
+                <div key="trend">
+                  <ChartFrame fig={1} title="Évolution" subtitle={`Somme de ${measure} par ${unit}`}>
                     <TrendChart points={time.points} />
                   </ChartFrame>
                 </div>
-                <div className="col-span-12 lg:col-span-4">
+              )}
+
+              {hasTime && (
+                <div key="cumul">
                   <ChartFrame fig={2} title="Cumul" subtitle={`Somme cumulée de ${measure}`}>
                     <CumulativeChart points={time.points} />
                   </ChartFrame>
                 </div>
-              </div>
-            </Section>
-          )}
+              )}
 
-          {ranking.length > 0 && (
-            <Section index="03" title="Répartition">
-              <div className="grid grid-cols-12 gap-x-8 gap-y-12">
-                <div className="col-span-12 lg:col-span-7">
+              {ranking.length > 0 && (
+                <div key="ranking">
                   <ChartFrame
                     fig={3}
                     title="Classement"
@@ -161,25 +224,28 @@ export default function Dashboard() {
                     <RankingChart rows={ranking.slice(0, 8)} />
                   </ChartFrame>
                 </div>
-                <div className="col-span-12 lg:col-span-5">
+              )}
+
+              {split.length > 0 && (
+                <div key="donut">
                   <ChartFrame fig={4} title="Parts" subtitle={`Part de ${measure} par ${dimension2}`}>
                     <DonutChart slices={slices} />
                   </ChartFrame>
                 </div>
-              </div>
-            </Section>
-          )}
+              )}
+            </Grid>
+          </div>
 
           {(!hasTime || ranking.length === 0) && (
-            <p className="px-8 pt-12 font-mono text-[11px] text-muted">
+            <p className="pt-8 font-mono text-[11px] text-muted">
               {!hasTime && 'Aucune colonne de date détectée : les graphiques d’évolution sont masqués. '}
               {ranking.length === 0 && 'Aucune colonne de catégories détectée : classement et parts masqués.'}
             </p>
           )}
-        </>
+        </section>
       )}
 
-      <Section index={measure ? '04' : '01'} title="Données">
+      <Section index={measure ? '02' : '01'} title="Données">
         <DataTable profile={profile} />
       </Section>
     </>

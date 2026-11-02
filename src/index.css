@@ -67,3 +67,32 @@ select option {
   background: var(--paper);
   color: var(--ink);
 }
+/* --- Grille éditable --- */
+
+/* Emplacement fantôme pendant le déplacement : un simple trait orange, pas un aplat rouge */
+.react-grid-layout .react-grid-item.react-grid-placeholder {
+  background: var(--accent);
+  opacity: 0.07;
+  border: 1px dashed var(--accent);
+}
+
+/* Poignée de redimensionnement : un petit coin à l'encre, pas la flèche grise par défaut */
+.react-grid-layout .react-grid-item > .react-resizable-handle::after {
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+
+/* En mode édition : filets pointillés autour des widgets, curseur "main" sur l'en-tête */
+.editing .react-grid-item {
+  outline: 1px dashed var(--chart-4);
+  outline-offset: 8px;
+}
+.editing .drag-handle {
+  cursor: grab;
+}
+.editing .react-draggable-dragging .drag-handle {
+  cursor: grabbing;
+}
+.editing .react-draggable-dragging {
+  background: var(--paper);
+}
