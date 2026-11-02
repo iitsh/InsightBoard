@@ -70,6 +70,14 @@ export default function Dashboard() {
   const slices = useMemo(() => topWithOthers(split, 5), [split])
 
   const namesOf = (type) => profile.filter((c) => c.type === type).map((c) => c.name)
+    // Classement : toute catégorie utile (au moins 2 valeurs)
+  const rankingOptions = profile
+    .filter((c) => c.type === 'category' && c.distinct >= 2)
+    .map((c) => c.name)
+  // Répartition : seulement les catégories lisibles dans un donut (2 à 8 valeurs)
+  const splitOptions = profile
+    .filter((c) => c.type === 'category' && c.distinct >= 2 && c.distinct <= 8)
+    .map((c) => c.name)
   const hasTime = time && time.points.length > 0
   const unit = time?.granularity === 'day' ? 'jour' : 'mois'
 
@@ -95,8 +103,8 @@ export default function Dashboard() {
 
         <div className="col-span-12 grid grid-cols-2 gap-6 lg:col-span-8 lg:grid-cols-4">
           <Select label="Mesure" value={measure} options={namesOf('number')} onChange={setConfig('measure')} />
-          <Select label="Classement par" value={dimension} options={namesOf('category')} onChange={setConfig('dimension')} />
-          <Select label="Répartition par" value={dimension2} options={namesOf('category')} onChange={setConfig('dimension2')} />
+          <Select label="Classement par" value={dimension} options={rankingOptions} onChange={setConfig('dimension')} />
+<Select label="Répartition par" value={dimension2} options={splitOptions} onChange={setConfig('dimension2')} />
           <Select label="Date" value={date} options={namesOf('date')} onChange={setConfig('date')} />
         </div>
       </section>
