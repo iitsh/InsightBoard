@@ -45,3 +45,22 @@ export function applyFilters(data, { selected, dateColumn, from, to }) {
     return true
   })
 }
+// Résumé lisible des filtres actifs, pour l'en-tête d'export.
+// Hypothèse : selected = { Colonne: [valeurs] }, range = { from, to }.
+export function describeFilters(selected, range) {
+  const parts = []
+
+  for (const [col, vals] of Object.entries(selected || {})) {
+    const list = Array.from(vals || [])
+    if (!list.length) continue
+    const text =
+      list.length > 4 ? `${list.slice(0, 3).join(', ')} +${list.length - 3}` : list.join(', ')
+    parts.push(`${col} : ${text}`)
+  }
+
+  const from = range?.from ?? range?.[0]
+  const to = range?.to ?? range?.[1]
+  if (from || to) parts.push(`Période : ${from || '…'} → ${to || '…'}`)
+
+  return parts
+}

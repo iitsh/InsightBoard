@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Responsive, WidthProvider } from 'react-grid-layout'
+import ExportMasthead from './ExportMasthead'
 import { useDataStore } from '../store/useDataStore'
 import { useLayoutStore } from '../store/useLayoutStore'
 import { profileColumns, pickDefaults, defaultAgg } from '../utils/profile'
 import { computeStats, groupByDimension, groupByTime, topWithOthers } from '../utils/aggregate'
-import { applyFilters, distinctValues, dateBounds } from '../utils/filter'
+import { applyFilters, distinctValues, dateBounds, describeFilters } from '../utils/filter'
 import { fmtInt } from '../utils/format'
 import KpiStrip from './KpiStrip'
 import ChartFrame from './ChartFrame'
@@ -274,79 +275,89 @@ export default function Dashboard() {
                 </p>
               )}
 
-              <div className={`mt-6 ${editing ? 'editing' : ''}`}>
-                <Grid
-                  layouts={{ lg: gridLayout }}
-                  breakpoints={{ lg: 1024, sm: 0 }}
-                  cols={{ lg: 12, sm: 1 }}
-                  rowHeight={24}
-                  margin={[32, 16]}
-                  containerPadding={[0, 0]}
-                  draggableHandle=".drag-handle"
-                  isDraggable={editing}
-                  isResizable={editing}
-                  onLayoutChange={(_, all) => all.lg && updateLayout(all.lg)}
-                >
-                  <div key="kpi">
-                    <div className="h-full overflow-hidden border-t border-ink pt-3">
-                      <p className="eyebrow drag-handle">Indicateurs</p>
-                      <div className="mt-6">
-                        <KpiStrip
-                          measure={measure}
-                          agg={agg}
-                          stats={stats}
-                          ranking={ranking}
-                          dimension={dimension}
-                          points={hasTime ? time.points : null}
-                        />
+              {/* Zone capturée par l'export PNG / PDF */}
+              <div id="export-zone" className="mt-6 bg-paper">
+                <ExportMasthead
+                  fileName={fileName}
+                  shown={filtered.length}
+                  total={data.length}
+                  filters={describeFilters(selected, range)}
+                />
+
+                <div className={editing ? 'editing' : ''}>
+                  <Grid
+                    layouts={{ lg: gridLayout }}
+                    breakpoints={{ lg: 1024, sm: 0 }}
+                    cols={{ lg: 12, sm: 1 }}
+                    rowHeight={24}
+                    margin={[32, 16]}
+                    containerPadding={[0, 0]}
+                    draggableHandle=".drag-handle"
+                    isDraggable={editing}
+                    isResizable={editing}
+                    onLayoutChange={(_, all) => all.lg && updateLayout(all.lg)}
+                  >
+                    <div key="kpi">
+                      <div className="h-full overflow-hidden border-t border-ink pt-3">
+                        <p className="eyebrow drag-handle">Indicateurs</p>
+                        <div className="mt-6">
+                          <KpiStrip
+                            measure={measure}
+                            agg={agg}
+                            stats={stats}
+                            ranking={ranking}
+                            dimension={dimension}
+                            points={hasTime ? time.points : null}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {hasTime && (
-                    <div key="trend">
-                      <ChartFrame fig={1} title="Évolution" subtitle={`${aggWord} de ${measure} par ${unit}`}>
-                        <TrendChart points={time.points} />
-                      </ChartFrame>
-                    </div>
-                  )}
+                    {hasTime && (
+                      <div key="trend">
+                        <ChartFrame fig={1} title="Évolution" subtitle={`${aggWord} de ${measure} par ${unit}`}>
+                          <TrendChart points={time.points} />
+                        </ChartFrame>
+                      </div>
+                    )}
 
-                  {hasTime && (
-                    <div key="cumul">
-                      <ChartFrame fig={2} title="Cumul" subtitle={`${aggWord} cumulée de ${measure}`}>
-                        <CumulativeChart points={time.points} />
-                      </ChartFrame>
-                    </div>
-                  )}
+                    {hasTime && (
+                      <div key="cumul">
+                        <ChartFrame fig={2} title="Cumul" subtitle={`${aggWord} cumulée de ${measure}`}>
+                          <CumulativeChart points={time.points} />
+                        </ChartFrame>
+                      </div>
+                    )}
 
-                  {ranking.length > 0 && (
-                    <div key="ranking">
-                      <ChartFrame
-                        fig={3}
-                        title="Classement"
-                        subtitle={`${aggWord} de ${measure} par ${dimension} — 8 premiers`}
-                      >
-                        <RankingChart rows={ranking.slice(0, 8)} />
-                      </ChartFrame>
-                    </div>
-                  )}
+                    {ranking.length > 0 && (
+                      <div key="ranking">
+                        <ChartFrame
+                          fig={3}
+                          title="Classement"
+                          subtitle={`${aggWord} de ${measure} par ${dimension} — 8 premiers`}
+                        >
+                          <RankingChart rows={ranking.slice(0, 8)} />
+                        </ChartFrame>
+                      </div>
+                    )}
 
-                  {split.length > 0 && (
-                    <div key="donut">
-                      <ChartFrame
-                        fig={4}
-                        title="Parts"
-                        subtitle={
-                          agg === 'sum'
-                            ? `Part de ${measure} par ${dimension2}`
-                            : `Part des lignes par ${dimension2}`
-                        }
-                      >
-                        <DonutChart slices={slices} />
-                      </ChartFrame>
-                    </div>
-                  )}
-                </Grid>
+                    {split.length > 0 && (
+                      <div key="donut">
+                        <ChartFrame
+                          fig={4}
+                          title="Parts"
+                          subtitle={
+                            agg === 'sum'
+                              ? `Part de ${measure} par ${dimension2}`
+                              : `Part des lignes par ${dimension2}`
+                          }
+                        >
+                          <DonutChart slices={slices} />
+                        </ChartFrame>
+                      </div>
+                    )}
+                  </Grid>
+                </div>
               </div>
 
               {(!hasTime || ranking.length === 0) && (

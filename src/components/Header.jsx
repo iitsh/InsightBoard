@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import ExportMenu from './ExportMenu'
 import { useDataStore } from '../store/useDataStore'
 import { useThemeStore } from '../store/useThemeStore'
 
@@ -21,6 +22,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-7 text-[13px]">
+        <ExportMenu />
         <button
           onClick={toggle}
           className="text-muted transition-colors duration-150 hover:text-ink"
